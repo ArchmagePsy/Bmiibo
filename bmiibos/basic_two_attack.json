@@ -1,0 +1,6 @@
+{
+  "actionType": "melee",
+  "amount": 10,
+  "element": "normal",
+  "cooldown": 1
+}

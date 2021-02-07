@@ -1,0 +1,6 @@
+{
+  "actionType": "heal",
+  "selfTargeting": 0,
+  "amount": 5,
+  "cooldown": 3
+}

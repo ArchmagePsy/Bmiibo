@@ -1,0 +1,15 @@
+[
+  {
+    "actionType": "explosion",
+    "amount": 50,
+    "force": 1,
+    "element":  "fire",
+    "radius": 2,
+    "cooldown": 10
+  },
+  {
+    "actionType": "heal",
+    "amount": 25,
+    "selfTargeting": 1
+  }
+]
