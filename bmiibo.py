@@ -25,13 +25,14 @@ def heal(board, player, action, target):
 
 
 def explosion(board, player, action, target):
-    blast_area = board.get_area(action.radius, target)
-    for cell in blast_area:
-        if issubclass(type(cell), Bmiibo) and cell != player:
-            cell.damage(action.amount, action.element)
-            direction = board.direction(target, cell.pos)
-            destination = (cell.pos[0] + direction[0] * action.force, cell.pos[1] + direction[1] * action.force)
-            board.move(cell.pos, destination)
+    if action.radius + 1 < board.distance(player.pos, target):
+        blast_area = board.get_area(action.radius, target)
+        for cell in blast_area:
+            if issubclass(type(cell), Bmiibo) and cell != player:
+                cell.damage(action.amount, action.element)
+                direction = board.direction(target, cell.pos)
+                destination = (cell.pos[0] + direction[0] * action.force, cell.pos[1] + direction[1] * action.force)
+                board.move(cell.pos, destination)
 
 
 actionTypes = {

@@ -190,13 +190,14 @@ class ActionTestCase(unittest.TestCase):
         self.assertTrue(self.action.is_ranged())
 
     def test_explosion(self):
+        self.board.move(self.player.pos, (7, 7))
         self.action.tick()
-        self.action.process(self.enemy, self.board, (4, 5))
-        self.assertEqual(self.player.pos, (4, 4))
+        self.action.process(self.enemy, self.board, (6, 7))
+        self.assertEqual(self.player.pos, (7, 7))
+        self.assertEqual(self.player.hp, 50)
         self.action.tick()
-        self.action.process(self.enemy, self.board, (5, 4))
-        self.assertEqual(self.player.pos, (3, 4))
-        self.assertEqual(self.enemy.pos, (4, 3))
+        self.action.process(self.enemy, self.board, (7, 8))
+        self.assertEqual(self.player.pos, (7, 6))
 
     def test_over_self_heal(self):
         self.actionGroup.tick()

@@ -19,7 +19,8 @@ if __name__ == "__main__":
             "basic_one": 0,
             "basic_two": 0
         }
-        for _ in range(args.matches):
+        for i in range(args.matches):
+            print("match", i + 1)
             g = Game(args.board_size, basic_one=(0, 0), basic_two=(args.board_size-1, args.board_size-1))
             winner = g.play(reporting=args.reporting)
             wins[winner.name] += 1
