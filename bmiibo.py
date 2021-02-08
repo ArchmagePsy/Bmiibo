@@ -21,7 +21,7 @@ def is_adjacent(pos1, pos2):
 
 
 def melee(board, player, action, target):
-    if is_adjacent(target, player.pos) and issubclass(type(enemy := board[target]), Bmiibo):
+    if issubclass(type(enemy := board[target]), Bmiibo) and is_adjacent(target, player.pos):
         enemy.damage(action.amount, action.element)
 
 
@@ -45,14 +45,17 @@ def explosion(board, player, action, target):
 
 def blockade(board, player, action, target):
     if is_adjacent(player.pos, target):
-        if "blockedCell" in action.__dict__:
-            board.unblock(action.blockedCell)
+        if "blockedCells" in action.__dict__.keys():
+            if len(action.blockedCells) >= action.blocks:
+                board.unblock(action.blockedCells.pop(0))
+        else:
+            action.__dict__["blockedCells"] = []
         board.block(target)
-        action.__dict__["blockedCell"] = target
+        action.blockedCells.append(target)
 
 
 def ranged(board, player, action, target):
-    if not is_adjacent(player.pos, target) and issubclass(type(enemy := board[target]), Bmiibo):
+    if issubclass(type(enemy := board[target]), Bmiibo) and not is_adjacent(player.pos, target) :
         enemy.damage(action.amount, action.element)
 
 
@@ -75,23 +78,23 @@ def piercing(board, player, action, target):
             for x in range(player.pos[0]):
                 line_target = (x, player.pos[1])
                 if issubclass(type(enemy := board[line_target]), Bmiibo):
-                    enemy.damage(action.damage, action.element)
+                    enemy.damage(action.amount, action.element)
         else:
             for x in range(player.pos[0]+1, len(board)):
                 line_target = (x, player.pos[1])
                 if issubclass(type(enemy := board[line_target]), Bmiibo):
-                    enemy.damage(action.damage, action.element)
+                    enemy.damage(action.amount, action.element)
     elif is_vertical(player.pos, target):
         if player.pos[1] > target[1]:
             for y in range(player.pos[1]):
                 line_target = (player.pos[0], y)
                 if issubclass(type(enemy := board[line_target]), Bmiibo):
-                    enemy.damage(action.damage, action.element)
+                    enemy.damage(action.amount, action.element)
         else:
             for y in range(player.pos[1]+1, len(board)):
                 line_target = (player.pos[0], y)
                 if issubclass(type(enemy := board[line_target]), Bmiibo):
-                    enemy.damage(action.damage, action.element)
+                    enemy.damage(action.amount, action.element)
 
 
 def charge(board, player, action, target):
@@ -104,16 +107,15 @@ def charge(board, player, action, target):
 
 
 def weakness(board, player, action, target):
+    thing = None
     if action.is_self_targeting():
-        if bool(action.remove):
-            player.remove_weakness(action.element)
-        else:
-            player.add_weakness(action.element)
+        thing = player
     elif issubclass(type(enemy := board[target]), Bmiibo):
-        if bool(action.remove):
-            enemy.remove_weakness(action.element)
-        else:
-            enemy.add_weakness(action.element)
+        thing = enemy
+    if thing and bool(action.remove):
+        thing.remove_weakness(action.element)
+    else:
+        thing.add_weakness(action.element)
 
 
 actionTypes = {

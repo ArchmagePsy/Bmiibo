@@ -177,32 +177,97 @@ class ActionTestCase(unittest.TestCase):
                                      "cooldown": 1
                                  })
         self.enemy = MockBmiibo("enemy", {}, {}, {}, {})
-        self.action = Action(actionType="explosion", force=1, amount=50, cooldown=1, element="normal", radius=2)
-        self.actionGroup = ActionGroup([Action(actionType="heal", amount=50, selfTargeting=1, cooldown=1)])
+        self.explode = Action(actionType="explosion", force=1, amount=50, cooldown=1, element="normal", radius=2)
+        self.healingGrouped = ActionGroup([Action(actionType="heal", amount=50, selfTargeting=1, cooldown=1)])
+        self.set_blockade = Action(actionType="blockade", cooldown=1, blocks=1)
+        self.weaken = Action(actionType="weakness", cooldown=1, element="fire", remove=0)
+        self.shoot = Action(actionType="ranged", cooldown=1, amount=10, element="normal")
+        self.spin = Action(actionType="whirl", cooldown=1, amount=10, force=1, element="normal")
+        self.pierce = Action(actionType="piercing", cooldown=1, amount=10, element="normal")
+        self.reckless = Action(actionType="charge", cooldown=1, amount=10, recoil=5, element="normal", distance=2)
 
         self.board[(4, 4)] = self.player
         self.board[(4, 3)] = self.enemy
 
     def test_is_self_targeting(self):
-        self.assertTrue(self.actionGroup.is_self_targeting())
+        self.assertTrue(self.healingGrouped.is_self_targeting())
 
     def test_is_ranged(self):
-        self.assertTrue(self.action.is_ranged())
+        self.assertTrue(self.explode.is_ranged())
 
     def test_explosion(self):
         self.board.move(self.player.pos, (7, 7))
-        self.action.tick()
-        self.action.process(self.enemy, self.board, (6, 7))
+        self.explode.tick()
+        self.explode.process(self.enemy, self.board, (6, 7))
         self.assertEqual(self.player.pos, (7, 7))
         self.assertEqual(self.player.hp, 50)
-        self.action.tick()
-        self.action.process(self.enemy, self.board, (7, 8))
+        self.explode.tick()
+        self.explode.process(self.enemy, self.board, (7, 8))
         self.assertEqual(self.player.pos, (7, 6))
 
     def test_over_self_heal(self):
-        self.actionGroup.tick()
-        self.actionGroup.process(self.player, self.board, None)
+        self.healingGrouped.tick()
+        self.healingGrouped.process(self.player, self.board, None)
         self.assertEqual(self.player.hp, 100)
+
+    def test_blockade(self):
+        self.set_blockade.tick()
+        self.set_blockade.process(self.player, self.board, (4, 5))
+        self.assertEqual(self.board[(4, 5)], BlockedCell())
+        self.set_blockade.tick()
+        self.set_blockade.process(self.player, self.board, (5, 4))
+        self.assertEqual(self.board[(5, 4)], BlockedCell())
+        self.assertEqual(self.board[(4, 5)], EmptyCell())
+
+    def test_weaken(self):
+        self.weaken.tick()
+        self.weaken.process(self.player, self.board, self.enemy.pos)
+        self.assertIn("fire", self.enemy.weaknesses)
+        self.weaken.remove = 1
+        self.weaken.tick()
+        self.weaken.process(self.player, self.board, self.enemy.pos)
+        self.assertNotIn("fire", self.enemy.weaknesses)
+
+    def test_ranged(self):
+        self.shoot.tick()
+        self.shoot.process(self.player, self.board, self.enemy.pos)
+        self.assertEqual(self.enemy.hp, 100)
+        self.board.move(self.enemy.pos, (6, 3))
+        self.shoot.tick()
+        self.shoot.process(self.player, self.board, self.enemy.pos)
+        self.assertEqual(self.enemy.hp, 90)
+
+    def test_whirl(self):
+        self.board[(5, 3)] = (enemy2 := MockBmiibo("enemy2", {}, {}, {}, {}))
+        self.spin.tick()
+        self.spin.process(self.player, self.board, None)
+        self.assertEqual(self.enemy.hp, 90)
+        self.assertEqual(enemy2.hp, 90)
+        self.assertEqual(self.enemy.pos, (4, 2))
+        self.assertEqual(enemy2.pos, (6, 2))
+
+    def test_pierce(self):
+        other_enemies_pos = [(4, 2), (5, 4), (3, 4), (4, 7)]
+        other_enemies = []
+        for i, e in enumerate(other_enemies_pos):
+            other_enemies.append(enemy := MockBmiibo(f"enemy{i+2}", {}, {}, {}, {}))
+            self.board[e] = enemy
+        for e in other_enemies_pos:
+            self.pierce.tick()
+            self.pierce.process(self.player, self.board, e)
+        for e in other_enemies + [self.enemy]:
+            self.assertEqual(e.hp, 90)
+
+    def test_charge(self):
+        self.board.move(self.player.pos, (6, 7))
+        self.reckless.tick()
+        self.reckless.process(self.player, self.board, self.enemy.pos)
+        self.assertEqual(self.player.hp, 95)
+        self.assertEqual(self.enemy.hp, 100)
+        self.reckless.tick()
+        self.reckless.process(self.player, self.board, self.enemy.pos)
+        self.assertEqual(self.player.hp, 90)
+        self.assertEqual(self.enemy.hp, 90)
 
     def test_generate_actions(self):
         self.assertEqual(len(list(generate_actions(self.board.simplified(self.player), self.player))), 7)
