@@ -86,7 +86,8 @@ class Board(list):
         return False
 
     def block(self, pos):
-        self[pos] = BlockedCell()
+        if type(self[pos]) is EmptyCell:
+            self[pos] = BlockedCell()
 
     def unblock(self, pos):
         if type(self[pos]) is BlockedCell:

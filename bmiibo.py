@@ -35,13 +35,41 @@ def explosion(board, player, action, target):
                 board.move(cell.pos, destination)
 
 
+def blockade(board, player, action, target):
+    if is_adjacent(player.pos, target):
+        if "blockedCell" in action.__dict__:
+            board.unblock(action.blockedCell)
+        board.block(target)
+        action.__dict__["blockedCell"] = target
+
+
+def ranged(board, player, action, target):
+    if not is_adjacent(player.pos, target) and issubclass(type(board[target]), Bmiibo):
+        board[target].damage(action.amount, action.element)
+
+
+def whirl(board, player, action, target):
+    top_left = (player.pos[0] - 1, player.pos[1] - 1)
+    whirl_area = generate_pos(3)
+    whirl_area.remove((1, 1))
+    for pos in whirl_area:
+        transformed_pos = (pos[0] + top_left[0], pos[1] + top_left[1])
+        melee(board, player, action, transformed_pos)
+        direction = board.direction(player.pos, transformed_pos)
+        destination = (transformed_pos[0] + direction[0] * action.force,
+                       transformed_pos[1] + direction[1] * action.force)
+        board.move(transformed_pos, destination)
+
+
 actionTypes = {
     "melee": melee,
     "heal": heal,
-    "explosion": explosion
+    "explosion": explosion,
+    "blockade": blockade,
+    "ranged": ranged
 }
 
-melee_actions = ["melee"]
+melee_actions = ["melee", "blockade"]
 
 
 def generate_actions(simplified_board, player):
