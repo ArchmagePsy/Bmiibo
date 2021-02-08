@@ -6,6 +6,14 @@ from operator import itemgetter
 from os.path import exists
 
 
+def is_horizontal(pos1, pos2):
+    return pos1[1] == pos2[1]
+
+
+def is_vertical(pos1, pos2):
+    return pos1[0] == pos2[0]
+
+
 def is_adjacent(pos1, pos2):
     dx = pos1[0] - pos2[0]
     dy = pos1[1] - pos2[1]
@@ -13,26 +21,26 @@ def is_adjacent(pos1, pos2):
 
 
 def melee(board, player, action, target):
-    if is_adjacent(target, player.pos) and issubclass(type(board[target]), Bmiibo):
-        board[target].damage(action.amount, action.element)
+    if is_adjacent(target, player.pos) and issubclass(type(enemy := board[target]), Bmiibo):
+        enemy.damage(action.amount, action.element)
 
 
 def heal(board, player, action, target):
     if action.is_self_targeting():
         player.heal(action.amount)
-    elif issubclass(type(board[target]), Bmiibo):
-        board[target].heal(action.amount)
+    elif issubclass(type(enemy := board[target]), Bmiibo):
+        enemy.heal(action.amount)
 
 
 def explosion(board, player, action, target):
     if action.radius + 1 < board.distance(player.pos, target):
         blast_area = board.get_area(action.radius, target)
-        for cell in blast_area:
-            if issubclass(type(cell), Bmiibo) and cell != player:
-                cell.damage(action.amount, action.element)
-                direction = board.direction(target, cell.pos)
-                destination = (cell.pos[0] + direction[0] * action.force, cell.pos[1] + direction[1] * action.force)
-                board.move(cell.pos, destination)
+        for enemy in blast_area:
+            if issubclass(type(enemy), Bmiibo) and enemy != player:
+                enemy.damage(action.amount, action.element)
+                direction = board.direction(target, enemy.pos)
+                destination = (enemy.pos[0] + direction[0] * action.force, enemy.pos[1] + direction[1] * action.force)
+                board.move(enemy.pos, destination)
 
 
 def blockade(board, player, action, target):
@@ -44,8 +52,8 @@ def blockade(board, player, action, target):
 
 
 def ranged(board, player, action, target):
-    if not is_adjacent(player.pos, target) and issubclass(type(board[target]), Bmiibo):
-        board[target].damage(action.amount, action.element)
+    if not is_adjacent(player.pos, target) and issubclass(type(enemy := board[target]), Bmiibo):
+        enemy.damage(action.amount, action.element)
 
 
 def whirl(board, player, action, target):
@@ -61,15 +69,66 @@ def whirl(board, player, action, target):
         board.move(transformed_pos, destination)
 
 
+def piercing(board, player, action, target):
+    if is_horizontal(player.pos, target):
+        if player.pos[0] > target[0]:
+            for x in range(player.pos[0]):
+                line_target = (x, player.pos[1])
+                if issubclass(type(enemy := board[line_target]), Bmiibo):
+                    enemy.damage(action.damage, action.element)
+        else:
+            for x in range(player.pos[0]+1, len(board)):
+                line_target = (x, player.pos[1])
+                if issubclass(type(enemy := board[line_target]), Bmiibo):
+                    enemy.damage(action.damage, action.element)
+    elif is_vertical(player.pos, target):
+        if player.pos[1] > target[1]:
+            for y in range(player.pos[1]):
+                line_target = (player.pos[0], y)
+                if issubclass(type(enemy := board[line_target]), Bmiibo):
+                    enemy.damage(action.damage, action.element)
+        else:
+            for y in range(player.pos[1]+1, len(board)):
+                line_target = (player.pos[0], y)
+                if issubclass(type(enemy := board[line_target]), Bmiibo):
+                    enemy.damage(action.damage, action.element)
+
+
+def charge(board, player, action, target):
+    for _ in range(action.distance):
+        direction = board.direction(player.pos, target)
+        destination = (player.pos[0] + direction[0], player.pos[1] + direction[1])
+        board.move(player.pos, destination)
+    melee(board, player, action, target)
+    player.damage(action.recoil, action.element)
+
+
+def weakness(board, player, action, target):
+    if action.is_self_targeting():
+        if bool(action.remove):
+            player.remove_weakness(action.element)
+        else:
+            player.add_weakness(action.element)
+    elif issubclass(type(enemy := board[target]), Bmiibo):
+        if bool(action.remove):
+            enemy.remove_weakness(action.element)
+        else:
+            enemy.add_weakness(action.element)
+
+
 actionTypes = {
     "melee": melee,
     "heal": heal,
     "explosion": explosion,
     "blockade": blockade,
-    "ranged": ranged
+    "ranged": ranged,
+    "whirl": whirl,
+    "piercing": piercing,
+    "charge": charge,
+    "weakness": weakness
 }
 
-melee_actions = ["melee", "blockade"]
+melee_actions = ["melee", "blockade", "whirl"]
 
 
 def generate_actions(simplified_board, player):
@@ -282,7 +341,7 @@ class Bmiibo:
         )](self, board)
 
     def damage(self, amount, element):
-        multiplier = 2 if element.lower() in self.weaknesses else 1
+        multiplier = 2 if element.lower().strip() in self.weaknesses else 1
         self.hp -= amount * multiplier
 
     def heal(self, amount):
@@ -292,12 +351,12 @@ class Bmiibo:
             self.hp += amount
 
     def add_weakness(self, element):
-        element = element.lower()
+        element = element.lower().strip()
         if element not in self.weaknesses:
             self.weaknesses.append(element)
 
     def remove_weakness(self, element):
-        element = element.lower()
+        element = element.lower().strip()
         if element in self.weaknesses:
             self.weaknesses.remove(element)
 
