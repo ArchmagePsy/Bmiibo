@@ -132,6 +132,8 @@ actionTypes = {
 
 melee_actions = ["melee", "blockade", "whirl"]
 
+elements = ["normal", "fire", "water", "earth", "air", "light", "dark"]
+
 
 def generate_actions(simplified_board, player):
     for cell in simplified_board:
@@ -354,7 +356,7 @@ class Bmiibo:
 
     def add_weakness(self, element):
         element = element.lower().strip()
-        if element not in self.weaknesses:
+        if element not in self.weaknesses and element in elements:
             self.weaknesses.append(element)
 
     def remove_weakness(self, element):
