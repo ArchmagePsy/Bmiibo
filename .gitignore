@@ -2,4 +2,5 @@ venv
 __pycache__
 .idea
 bmiibos/*_brain
+bmiibos/*.json
 .env

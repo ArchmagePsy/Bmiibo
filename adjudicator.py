@@ -1,3 +1,4 @@
+import json
 import os
 import random
 import re
@@ -31,8 +32,10 @@ compliment = [
 ]
 
 client = discord.Client()
+prefix="!"
 claim_regex = re.compile(r"claim\s+(\w+)")
 edit_regex = re.compile(r"edit\s+(attack|ability|ultimate)(\[\d+])?:(\w+)=(number|string):(\w+)")
+save_regex = re.compile(r"save\s+(attack|ability|ultimate|all)")
 claimed = dict()
 edits = dict()
 
@@ -57,11 +60,18 @@ def edit_group(action_data, index, key, value_type, value):
 
 
 def edit(user_id, action, index, key, value_type, value):
-    bmiibo_name = claimed[user_id]
+    if user_id in claimed.keys():
+        bmiibo_name = claimed[user_id]
+    else:
+        return 1
     action_key = f"{bmiibo_name}_{action}"
 
     if action_key not in edits.keys():
-        edits[action_key] = list() if index is not None else dict()
+        if os.path.exists(file_name := f"bmiibos/{action_key}.json"):
+            with open(file_name, "r") as file:
+                edits[action_key] = json.load(file)
+        else:
+            edits[action_key] = list() if index is not None else dict()
 
     if type(action_data := edits[action_key]) is list:
         if index:
@@ -76,6 +86,23 @@ def edit(user_id, action, index, key, value_type, value):
         else:
             action_data[key] = value if "string" == value_type else int(value)
             return action_data
+
+
+def save(user_id, action):
+    if user_id in claimed.keys():
+        if "all" == action:
+            for action in ["attack", "ability", "ultimate"]:
+                if (action_name := f"{claimed[user_id]}_{action}") in edits.keys():
+                    with open(f"bmiibos/{action_name}.json", "w") as file:
+                        json.dump(edits[action_name], file)
+            return 2
+        elif (action_name := f"{claimed[user_id]}_{action}") in edits.keys():
+            with open(f"bmiibos/{action_name}.json", "w") as file:
+                json.dump(edits[action_name], file)
+            return 2
+        return 0
+    else:
+        return 1
 
 
 def is_dm(channel):
@@ -95,14 +122,14 @@ async def on_ready():
 async def on_message(message):
     if message.author == client.user:
         return
-    elif (strip_message := message.content.strip()).startswith("!judy"):
+    elif (strip_message := message.content.strip()).startswith(f"{prefix}judy"):
         if "claim" in strip_message:
             matches = claim_regex.search(strip_message)
             if matches:
                 if 1 == (claim_result := claim(message.author.id, matches[1])):
-                    await message.channel.send(f"claimed {matches[1]} for {message.author.name}")
+                    await message.channel.send(f"claimed `{matches[1]}` for {message.author.name}")
                 elif 0 == claim_result:
-                    await message.channel.send(f"sorry {message.author.name}! {matches[1]} has already been claimed :(")
+                    await message.channel.send(f"sorry {message.author.name}! `{matches[1]}` has already been claimed :(")
                 elif 2 == claim_result:
                     await message.channel.send(f"sorry {message.author.name}! you've already claimed a name")
             else:
@@ -114,12 +141,28 @@ async def on_message(message):
                     if 0 == (edit_result := edit(message.author.id, matches[1], matches[2], matches[3], matches[4], matches[5])):
                         await message.channel.send(
                             f"sorry {message.author.name}! this is an action group so you need an index e.g `{matches[1]}[0]`")
+                    elif 1 == edit_result:
+                        await message.channel.send(
+                            f"sorry {message.author.name}! you need to claim a name for your Bmiibo")
                     else:
-                        await message.channel.send(f"{matches[1]}: {edit_result}")
+                        await message.channel.send(f"`{matches[1]}: {edit_result}`")
                 else:
                     await message.channel.send(f"sorry {message.author.name}! I didn't understand that")
             else:
                 await message.author.send("what would you like to edit?")
+        elif "save" in strip_message:
+            if is_dm(message.channel):
+                matches = save_regex.search(strip_message)
+                if matches:
+                    if 0 == (save_result := save(message.author.id, matches[1])):
+                        await message.channel.send(f"sorry {message.author.name}! I'm not sure what went wrong there :(")
+                    elif 1 == save_result:
+                        await message.channel.send(
+                            f"sorry {message.author.name}! you need to claim a name for your Bmiibo")
+                    elif 2 == save_result:
+                        await message.channel.send(f"`{matches[1]}` saved!")
+                else:
+                    await message.channel.send(f"sorry {message.author.name}! I didn't understand that")
         else:
             await message.channel.send(f"sorry {message.author.name}! I didn't understand that")
     elif (pro_message := message.content.lower().strip()) in ["my son", "my son!"] and message.author.name == DAD:
