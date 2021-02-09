@@ -4,3 +4,5 @@ __pycache__
 bmiibos/*_brain
 bmiibos/*.json
 .env
+claims
+training.json
