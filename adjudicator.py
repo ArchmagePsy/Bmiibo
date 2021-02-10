@@ -1,11 +1,16 @@
+import io
 import json
 import os
 import pickle
 import random
 import re
+from tempfile import TemporaryFile
+from datetime import datetime
 
 import discord
 from dotenv import load_dotenv
+
+from chess import Game, choose_positions
 
 load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
@@ -35,8 +40,8 @@ compliment = [
 
 client = discord.Client()
 prefix = "!"
-claim_regex = re.compile(r"claim\s+(\w+)")
-edit_regex = re.compile(r"edit\s+(attack|ability|ultimate)(\[\d+])?:(\w+)=(number|string):(\w+)")
+claim_regex = re.compile(r"claim\s+(\w{2,20})")
+edit_regex = re.compile(r"edit\s+(attack|ability|ultimate)(\[\d+])?:(\w{1,20})=(number|string):(\w{1,20})")
 save_regex = re.compile(r"save\s+(attack|ability|ultimate|all)")
 reset_regex = re.compile(r"reset\s+(attack|ability|ultimate|all)")
 view_regex = re.compile(r"view\s+(attack|ability|ultimate|all)")
@@ -281,12 +286,100 @@ async def on_message(message):
             response = """
             I am Adjudicator, the arbiter of all things Bmiibo.
             
-            In his spare time Father made a customizeable text-based autobattler that used Q-learning to attempt to learn 
+            In his spare time Father made a customizable text-based auto-battler that used Q-learning to attempt to learn 
             how to fight. It was Father's intent to be able to play this with his friends (I'm guessing that's you) 
-            and since the game was text based he thought what better way to do it than with me, a discord bot!"""
+            and since the game was text based he thought what better way to do it than with me, a discord bot!
+            
+            Please remember that I'm quite new to this so I may make mistakes now and again, so please be nice!
+            
+            Thanks, Judy"""
+        elif "how" in pro_message:
+            response = """
+            All my commands are prefixed with `'!judy'`
+            
+            `claim name`
+            where `name` is the name you want to claim for your bmiibo, can only be done once and must be done before
+            most other commands. name can be any alphanumeric string between 2 and 20 characters long
+            
+            `train`
+            add your bmiibo to the training list or if it is already in the training list remove it
+            
+            `edit`
+            judy will open a dm with you where you can use dm only commands
+            
+            DM ONLY=====================================================================================================
+            `edit attack|ability|ultimate:parameter=number|string:value`
+            where `parameter` is the parameter for that action you want to edit and `value` is what you want to set it
+            to. An action is promoted to an action group if an index is used e.g `edit attack[0]:actionType=string:melee`
+            if the action already has data it will be placed into the 0 slot of the action group, if you specify an index
+            greater than the current length of the action group it will be appended instead (so if you say [99] and there
+            are only 3 [0, 1, 2] actions it will edit the newly added [3] slot)
+            
+            `save attack|ability|ultimate|all`
+            saves the specified action, only works if the action is being edited. `all` saves all the actions that you
+            are currently editing
+            
+            `view attack|ability|ultimate|all`
+            lets you view the specified action showing you whether it is the version being edited or the one saved
+            
+            `reset attack|ability|ultimate|all`
+            clears the specified action, if an action has been promoted to an action group this is the only way to change 
+            it back to a single action
+            
+            FRIENDLY COMMANDS===========================================================================================
+            these commands are run by including the keyword and mentioning judy with `@Adjudicator`
+            
+            `thank`
+            receive a random message showing gratitude and a nice compliment
+            
+            `what`
+            get a description of what judy is built for
+            
+            `how`
+            this message
+            """
         else:
             response = "How can I help?"
-        await message.channel.send(response)
+        if 2000 >= len(response):
+            await message.channel.send(response)
+        else:
+            byte_stream = io.BytesIO(response.encode("utf-8"))
+            await message.channel.send("Sorry! the response for this command was too big so i wrote it up in a nice .txt file for you", file=discord.File(byte_stream, "response.txt"))
+
+
+@client.event
+async def on_reaction_add(reaction, user):
+    if user == client.user:
+        return
+    elif "challenge" in reaction.message.content and user in reaction.message.mentions:
+        if "🏳️" == str(reaction):
+            await reaction.message.delete()
+        elif "🏴" == str(reaction):
+            if reaction.message.author in reaction.message.mentions:
+                await reaction.message.channel.send(f"Sorry {reaction.message.author.name}! you can't challenge yourself")
+                await reaction.message.delete()
+                return
+            challengee_count = len(reaction.message.mentions)
+            async for user in reaction.users():
+                if user in reaction.message.mentions:
+                    challengee_count -= 1
+            if 0 == challengee_count:
+                with TemporaryFile(mode="w+") as match_file:
+                    try:
+                        players = reaction.message.mentions + [reaction.message.author]
+                        contestants = map(lambda x: claimed[x.id], players)
+                        random.shuffle(players)
+                        match = Game(4, **{name: pos for name, pos in zip(contestants, choose_positions(len(players), 4))})
+                        winner = match.play(training=False, reporting=True, file=match_file)
+                        match_file.seek(0)
+                        byte_stream = io.BytesIO(match_file.read().encode("utf-8"))
+                        await reaction.message.channel.send(
+                            f"Congratulations `{winner.name}`! Here's a full breakdown of the match",
+                            file=discord.File(byte_stream, f"{datetime.now().strftime('%d/%m/%y_%H/%M/%S')}.txt")
+                        )
+                        await reaction.message.delete()
+                    except KeyError:
+                        await reaction.message.channel.send(f"Sorry! looks like someone doesen't have a Bmiibo yet")
 
 
 client.run(TOKEN)

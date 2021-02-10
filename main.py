@@ -1,6 +1,6 @@
 import argparse
 
-from chess import Game
+from chess import Game, choose_positions
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="play Bmiibo Buto Chess")
@@ -12,6 +12,10 @@ if __name__ == "__main__":
                         help="number of matches to play")
     parser.add_argument("board_size", metavar="N", type=int, choices=[4, 8, 16],
                         help="the size of the board in cells NxN, acceptable values of N are 4, 8, and 16")
+    parser.add_argument("--match-file", type=str, default=None, action="store",
+                        help="the name of the file to write matches to")
+    parser.add_argument("--bmiibo-names", dest="names", type=str, nargs="+", action="extend",
+                        help="the Bmiibos that will take part in these matches")
     args = parser.parse_args()
 
     if args.basic_training:
@@ -19,12 +23,31 @@ if __name__ == "__main__":
             "basic_one": 0,
             "basic_two": 0
         }
+        if args.match_file:
+            output = open(args.match_file, "w")
+        else:
+            output = None
         for i in range(args.matches):
             print("match", i + 1)
             g = Game(args.board_size, basic_one=(0, 0), basic_two=(args.board_size-1, args.board_size-1))
-            winner = g.play(reporting=args.reporting)
+            winner = g.play(reporting=args.reporting, file=output)
             wins[winner.name] += 1
             for player in g.players + g.dead:
                 player.brain.save()
+        if output:
+            output.close()
         print("basic_one winrate:", (wins["basic_one"] / args.matches) * 100)
         print("basic_two winrate:", (wins["basic_two"] / args.matches) * 100)
+    else:
+        if args.match_file:
+            output = open(args.match_file, "w")
+        else:
+            output = None
+        for i in range(args.matches):
+            g = Game(args.board_size, **{name: pos for name, pos in zip(args.names, choose_positions(len(args.names), args.board_size))})
+            g.play(reporting=args.reporting, file=output)
+            for player in g.players + g.dead:
+                player.brain.save()
+        if output:
+            output.close()
+

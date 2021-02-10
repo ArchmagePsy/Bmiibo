@@ -1,7 +1,9 @@
 import random
+import sys
 from math import sqrt
+from operator import itemgetter
 
-from bmiibo import Bmiibo
+from bmiibo import Bmiibo, generate_pos
 
 
 class BlockedCell:
@@ -120,6 +122,13 @@ class Board(list):
         return round(dx / distance), round(dy / distance)
 
 
+def choose_positions(num_players, board_size):
+    positions = sorted(list(generate_pos(board_size)), key=itemgetter(1, 0))
+    bracket_width = (board_size ** 2) // num_players
+    for i in range(num_players):
+        yield random.choice(positions[(start := (i * bracket_width)):start + bracket_width])
+
+
 class Game:
 
     def __init__(self, size=8, **players):
@@ -130,31 +139,31 @@ class Game:
             self.players.append(new_player := Bmiibo(player[0]))
             self.board[player[1]] = new_player
 
-    def turn(self, reporting):
+    def turn(self, reporting, file):
         for p in self.players:
             if p.is_alive():
                 p.update(self.board)
                 if reporting:
-                    print(p)
-                    print(self.board)
-                    print(p.brain.memory[-1][0][2])
-                    print("*" * 100)
+                    print(p, file=file)
+                    print(self.board, file=file)
+                    print(p.brain.memory[-1][0][2], file=file)
+                    print("*" * 100, file=file)
             else:
                 self.players.remove(p)
                 self.dead.append(p)
                 self.board[p.pos] = EmptyCell()
 
-    def play(self, training=True, reporting=False):
+    def play(self, training=True, reporting=False, file=None):
         random.shuffle(self.players)
         while len(self.players) > 1:
-            self.turn(reporting)
+            self.turn(reporting, file)
             if training:
                 self.score()
                 self.train()
         winner = self.players[0]
         if reporting:
-            print(f"{winner.name} won!")
-            print("=" * 100)
+            print(f"{winner.name} won!", file=file)
+            print("=" * 100, file=file)
         return winner
 
     def score(self):

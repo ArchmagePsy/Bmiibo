@@ -1,7 +1,7 @@
 import json
 import pickle
 import random
-from functools import partial
+from functools import partial, reduce
 from operator import itemgetter
 from os.path import exists
 
@@ -55,7 +55,7 @@ def blockade(board, player, action, target):
 
 
 def ranged(board, player, action, target):
-    if issubclass(type(enemy := board[target]), Bmiibo) and not is_adjacent(player.pos, target) :
+    if issubclass(type(enemy := board[target]), Bmiibo) and not is_adjacent(player.pos, target):
         enemy.damage(action.amount, action.element)
 
 
@@ -80,7 +80,7 @@ def piercing(board, player, action, target):
                 if issubclass(type(enemy := board[line_target]), Bmiibo):
                     enemy.damage(action.amount, action.element)
         else:
-            for x in range(player.pos[0]+1, len(board)):
+            for x in range(player.pos[0] + 1, len(board)):
                 line_target = (x, player.pos[1])
                 if issubclass(type(enemy := board[line_target]), Bmiibo):
                     enemy.damage(action.amount, action.element)
@@ -91,7 +91,7 @@ def piercing(board, player, action, target):
                 if issubclass(type(enemy := board[line_target]), Bmiibo):
                     enemy.damage(action.amount, action.element)
         else:
-            for y in range(player.pos[1]+1, len(board)):
+            for y in range(player.pos[1] + 1, len(board)):
                 line_target = (player.pos[0], y)
                 if issubclass(type(enemy := board[line_target]), Bmiibo):
                     enemy.damage(action.amount, action.element)
@@ -132,7 +132,98 @@ actionTypes = {
 
 melee_actions = ["melee", "blockade", "whirl"]
 
+damage_dealing = melee_actions + ["ranged", "piercing", "explosion", "charge"]
+
+multi_hit = ["piercing", "explosion", "whirl"]
+
+force_actions = ["explosion", "whirl"]
+
 elements = ["normal", "fire", "water", "earth", "air", "light", "dark"]
+
+
+def balance_action(points, action_data):
+    actionType = action_data["actionType"]
+
+    if actionType not in actionTypes.keys():
+        return False
+    elif actionType in damage_dealing:
+        if actionType in multi_hit:
+            points -= action_data["amount"] * 2
+        else:
+            if actionType in force_actions:
+                points -= action_data["force"] * 3
+            elif "charge" == actionType:
+                points += action_data["recoil"]
+                points -= action_data["distance"] * 3
+            points -= action_data["amount"] if actionType in melee_actions else action_data["amount"] * 2
+    elif "heal" == actionType:
+        points -= round(action_data["amount"] * 1.5)
+    elif "weaken" == actionType:
+        points -= 10
+    elif "blockade" == actionType:
+        if 7 <= action_data["blocks"]:
+            return False
+        points -= action_data["blocks"] * 10
+    else:
+        points -= 1
+    return points
+
+
+def balance_ability(multiplier, cooldown, max_damage, action_data):
+    if type(action_data) is list:
+        if cooldown > action_data[0]["cooldown"]:
+            return False
+        elif (damage_actions := filter(lambda x: x["actionType"] in damage_dealing, action_data)) \
+                and max_damage < reduce(int.__add__, map(lambda x: x["amount"], damage_actions)):
+            return False
+        points = multiplier * action_data[0]["cooldown"]
+        for action in action_data:
+            points = balance_action(points, action)
+        return False if not points else 0 <= points
+    elif type(action_data) is dict:
+        if cooldown > action_data["cooldown"]:
+            return False
+        elif action_data["actionType"] in damage_dealing and max_damage < action_data["amount"]:
+            return False
+        points = multiplier * action_data["cooldown"]
+        return False if not (points := balance_action(points, action_data)) else 0 <= points
+    return False
+
+
+def balance_attack(multiplier, max_damage, action_data):
+    if type(action_data) is list:
+        points = multiplier * action_data[0]["cooldown"]
+        if not (damage_actions := filter(lambda x: x["actionType"] in damage_dealing, action_data)):
+            return False
+        elif max_damage < reduce(int.__add__, map(lambda x: x["amount"], damage_actions)):
+            return False
+        else:
+            for action in action_data:
+                points = balance_action(points, action)
+            return False if not points else 0 <= points
+    elif type(action_data) is dict:
+        points = multiplier * action_data["cooldown"]
+        if action_data["actionType"] not in damage_dealing:
+            return False
+        elif max_damage < action_data["amount"]:
+            return False
+        else:
+            return False if not (points := balance_action(points, action_data)) else 0 <= points
+    return False
+
+
+def balance(action, action_data):
+    try:
+        if "ultimate" == action:
+            return balance_ability(10, 10, 70, action_data)
+        elif "ability" == action:
+            return  balance_ability(5, 3, 40, action_data)
+        elif "attack" == action:
+            balance_attack(1, 20, action_data)
+        else:
+            return False
+    except KeyError:
+        return False
 
 
 def generate_actions(simplified_board, player):
