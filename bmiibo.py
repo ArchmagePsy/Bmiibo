@@ -132,7 +132,7 @@ actionTypes = {
 
 melee_actions = ["melee", "blockade", "whirl"]
 
-damage_dealing = melee_actions + ["ranged", "piercing", "explosion", "charge"]
+damage_dealing = ["melee", "whirl", "ranged", "piercing", "explosion", "charge"]
 
 multi_hit = ["piercing", "explosion", "whirl"]
 
@@ -158,10 +158,10 @@ def balance_action(points, action_data):
             points -= action_data["amount"] if actionType in melee_actions else action_data["amount"] * 2
     elif "heal" == actionType:
         points -= round(action_data["amount"] * 1.5)
-    elif "weaken" == actionType:
-        points -= 10
+    elif "weakness" == actionType:
+        points += 10 if not action_data["remove"] else -10
     elif "blockade" == actionType:
-        if 7 <= action_data["blocks"]:
+        if 4 <= action_data["blocks"]:
             return False
         points -= action_data["blocks"] * 10
     else:
@@ -173,34 +173,35 @@ def balance_ability(multiplier, cooldown, max_damage, action_data):
     if type(action_data) is list:
         if cooldown > action_data[0]["cooldown"]:
             return False
-        elif (damage_actions := filter(lambda x: x["actionType"] in damage_dealing, action_data)) \
+        elif (damage_actions := list(filter(lambda x: x["actionType"] in damage_dealing, action_data))) \
                 and max_damage < reduce(int.__add__, map(lambda x: x["amount"], damage_actions)):
             return False
         points = multiplier * action_data[0]["cooldown"]
         for action in action_data:
             points = balance_action(points, action)
-        return False if not points else 0 <= points
+        return points if type(points) is not int else 0 <= points
     elif type(action_data) is dict:
         if cooldown > action_data["cooldown"]:
             return False
         elif action_data["actionType"] in damage_dealing and max_damage < action_data["amount"]:
             return False
         points = multiplier * action_data["cooldown"]
-        return False if not (points := balance_action(points, action_data)) else 0 <= points
+        points = balance_action(points, action_data)
+        return points if type(points) is not int else 0 <= points
     return False
 
 
 def balance_attack(multiplier, max_damage, action_data):
     if type(action_data) is list:
         points = multiplier * action_data[0]["cooldown"]
-        if not (damage_actions := filter(lambda x: x["actionType"] in damage_dealing, action_data)):
+        if not (damage_actions := list(filter(lambda x: x["actionType"] in damage_dealing, action_data))):
             return False
         elif max_damage < reduce(int.__add__, map(lambda x: x["amount"], damage_actions)):
             return False
         else:
             for action in action_data:
                 points = balance_action(points, action)
-            return False if not points else 0 <= points
+            return points if type(points) is not int else 0 <= points
     elif type(action_data) is dict:
         points = multiplier * action_data["cooldown"]
         if action_data["actionType"] not in damage_dealing:
@@ -208,7 +209,8 @@ def balance_attack(multiplier, max_damage, action_data):
         elif max_damage < action_data["amount"]:
             return False
         else:
-            return False if not (points := balance_action(points, action_data)) else 0 <= points
+            points = balance_action(points, action_data)
+            return points if type(points) is not int else 0 <= points
     return False
 
 
@@ -217,12 +219,13 @@ def balance(action, action_data):
         if "ultimate" == action:
             return balance_ability(10, 10, 70, action_data)
         elif "ability" == action:
-            return  balance_ability(5, 3, 40, action_data)
+            return balance_ability(5, 3, 40, action_data)
         elif "attack" == action:
-            balance_attack(1, 20, action_data)
+            return balance_attack(10, 20, action_data)
         else:
             return False
-    except KeyError:
+    except KeyError as ke:
+        print(ke)
         return False
 
 

@@ -1,6 +1,6 @@
 import unittest
 
-from bmiibo import Bmiibo, Brain, normalize_strings, Action, ActionGroup, generate_actions, is_adjacent
+from bmiibo import Bmiibo, Brain, normalize_strings, Action, ActionGroup, generate_actions, is_adjacent, balance
 from chess import Board, EmptyCell, BlockedCell
 
 
@@ -152,6 +152,52 @@ class MiscTestCase(unittest.TestCase):
             "test_2": "normal",
             "test_3": 6
         })
+
+    def test_balance(self):
+        melee_attack = {
+            "actionType": "melee",
+            "amount": 10,
+            "element": "normal",
+            "cooldown": 1
+        }
+
+        block_ability = [{
+            "actionType": "blockade",
+            "blocks": 2,
+            "cooldown": 4
+        }, {
+            "actionType": "weakness",
+            "remove": 0,
+            "element": "fire",
+            "selfTargeting": 1
+        }, {
+            "actionType": "ranged",
+            "element": "normal",
+            "amount": 5
+        }]
+
+        charge_ultimate = [{
+            "actionType": "charge",
+            "element": "dark",
+            "amount": 25,
+            "recoil": 20,
+            "distance": 3,
+            "cooldown": 10
+        }, {
+            "actionType": "whirl",
+            "amount": 20,
+            "force": 1,
+            "element": "light"
+        }, {
+            "actionType": "blockade",
+            "blocks": 1
+        }]
+
+        self.assertFalse(balance("special", melee_attack))
+        self.assertTrue(balance("attack", melee_attack))
+        self.assertFalse(balance("ability", melee_attack))
+        self.assertTrue(balance("ability", block_ability))
+        self.assertTrue(balance("ultimate", charge_ultimate))
 
 
 class ActionTestCase(unittest.TestCase):
