@@ -87,6 +87,9 @@ def edit(user_id, action, index, key, value_type, value):
         return 1
     action_key = f"{bmiibo_name}_{action}"
 
+    if index:
+        index = int(index[1:-1])
+
     if action_key not in edits.keys():
         if os.path.exists(file_name := f"{DIR}{action_key}.json"):
             with open(file_name, "r") as action_file:
@@ -95,12 +98,12 @@ def edit(user_id, action, index, key, value_type, value):
             edits[action_key] = list() if index is not None else dict()
 
     if type(action_data := edits[action_key]) is list:
-        if index:
+        if type(index) is int:
             return edit_group(action_data, index, key, value_type, value)
         else:
             return 0
     else:
-        if index:
+        if type(index) is int:
             edits[action_key] = [edits[action_key]]
             action_data = edits[action_key]
             return edit_group(action_data, index, key, value_type, value)
