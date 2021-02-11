@@ -10,6 +10,7 @@ from datetime import datetime
 import discord
 from dotenv import load_dotenv
 
+from bmiibo import balance
 from chess import Game, choose_positions
 
 load_dotenv()
@@ -126,13 +127,19 @@ def save(user_id, action):
         if "all" == action:
             for action in ["attack", "ability", "ultimate"]:
                 if (action_name := f"{claimed[user_id]}_{action}") in edits.keys():
-                    with open(f"{DIR}{action_name}.json", "w") as action_file:
-                        json.dump(edits[action_name], action_file)
-            return 2
+                    if balance(action, edits[action_name]):
+                        with open(f"{DIR}{action_name}.json", "w") as action_file:
+                            json.dump(edits[action_name], action_file)
+                        return 2
+                    else:
+                        return 3
         elif (action_name := f"{claimed[user_id]}_{action}") in edits.keys():
-            with open(f"{DIR}{action_name}.json", "w") as action_file:
-                json.dump(edits[action_name], action_file)
-            return 2
+            if balance(action, edits[action_name]):
+                with open(f"{DIR}{action_name}.json", "w") as action_file:
+                    json.dump(edits[action_name], action_file)
+                return 2
+            else:
+                return 3
         return 0
     else:
         return 1
@@ -232,6 +239,9 @@ async def on_message(message):
                             f"sorry {message.author.name}! you need to claim a name for your Bmiibo")
                     elif 2 == save_result:
                         await message.channel.send(f"`{matches[1]}` saved!")
+                    elif 3 == save_result:
+                        await message.channel.send(
+                            f"sorry {message.author.name}! this is too OP!")
                 else:
                     await message.channel.send(f"sorry {message.author.name}! I didn't understand that")
         elif "view" in strip_message:
