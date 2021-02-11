@@ -1,4 +1,5 @@
 import argparse
+import json
 
 from chess import Game, choose_positions
 
@@ -8,6 +9,8 @@ if __name__ == "__main__":
                         help="runs the 1v1 basic training program")
     parser.add_argument("--reporting", dest="reporting", action="store_true",
                         help="whether or not to show the board and moves whilst playing")
+    parser.add_argument("--discord", dest="train_discord_bmiibos", action="store_true",
+                        help="runs the training program for 100 matches of the bmiibos that judy has put in the training queue")
     parser.add_argument("--matches", dest="matches", type=int, choices=list(range(1, 101)), default=1,
                         help="number of matches to play")
     parser.add_argument("board_size", metavar="N", type=int, choices=[4, 8, 16],
@@ -38,6 +41,20 @@ if __name__ == "__main__":
             output.close()
         print("basic_one winrate:", (wins["basic_one"] / args.matches) * 100)
         print("basic_two winrate:", (wins["basic_two"] / args.matches) * 100)
+    elif args.train_discord_bmiibos:
+        if args.match_file:
+            output = open(args.match_file, "w")
+        else:
+            output = None
+        with open("training.json", "r") as training_file:
+            training = json.load(training_file)
+        for i in range(100):
+            g = Game(args.board_size, **{name: pos for name, pos in zip(training, choose_positions(len(training), args.board_size))})
+            g.play(reporting=args.reporting, file=output)
+            for player in g.players + g.dead:
+                player.brain.save()
+        if output:
+            output.close()
     else:
         if args.match_file:
             output = open(args.match_file, "w")

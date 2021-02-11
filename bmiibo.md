@@ -17,7 +17,7 @@ ways.
 
 ## The Game
 ### The Board
-The game is played on an NxN board (the values of N are normally 4, 8, 16) and each player's 
+The game is played on an `NxN` board (the values of `N` are normally 4, 8, or 16) and each player's 
 Bmiibo is placed on a random cell (the algorithm actually does its best to space them out 
 on the board but a large number of players on a small board can result in closer starting
 positions).
@@ -133,3 +133,32 @@ bmiibo if it thinks this will be beneficial, additionally over damaging a bmiibo
 actions are quite rare.
 
 ## The Balance formula
+### What is the balance formula?
+The balance formula is a function that checks your different actions to make sure they are "balanced" meaning they are not
+considered to be too powerful.
+
+### Ok but what *is* the balance formula?
+So the formula works like this:
+
+You start off with a number of points depending on the type of action, calculated as a constant multiplied by the `cooldown` for
+the action. The multipliers are as follows: 10 for attacks and ultimates and 5 for abilities. e.g an ultimate with a `cooldown` of 10
+would start you off with 100 points.
+
+Next points are subtracted based on the parameters of your action. The different parameters that affect the outcome are as follows:
+
+* `amount`: the sum of all damage done by melee action components is subtracted from the total, then if any are ranged or multi-hit
+    this is doubled. For healing this is multiplied by 1.5 and rounded to the nearest integer.
+    
+* `distance` and `force`: the value here is simply multiplied by 3
+
+* `recoil`: points are *added* equal to this value
+
+* `selftargeting` and `remove` (specifically for `weakness`): if `selfTargeting` and `remove` are 1 10 points are subtracted
+    however if they're 1 and 0 10 points are *added*. On the other hand if `selfTargeting` is 0 or not present then 10 is subtracted
+    
+* `blocks`: the value here is simply multiplied by 10
+
+Some additional restrictions exist such as the maximum amount of damage an attack, ability and ultimate can do (20, 40, 70 respectively)
+and the minimum cooldown for ultimates and abilities (10 and 3 respectively). For the `blockade` action there is a maximum value of
+2 for the `blocks` parameter and 1 occurrence of the action component per action (this is to prevent a situation where a Bmiibo could 
+"turtle up" and use ranged attacks to guarantee a win). Lastly `recoil` must at least have a value of 5.

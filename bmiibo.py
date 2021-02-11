@@ -153,24 +153,32 @@ def balance_action(points, action_data):
             if actionType in force_actions:
                 points -= action_data["force"] * 3
             elif "charge" == actionType:
+                if 5 > action_data["recoil"]:
+                    return False
                 points += action_data["recoil"]
                 points -= action_data["distance"] * 3
             points -= action_data["amount"] if actionType in melee_actions else action_data["amount"] * 2
     elif "heal" == actionType:
         points -= round(action_data["amount"] * 1.5)
     elif "weakness" == actionType:
-        points += 10 if not action_data["remove"] else -10
+        if "selfTargeting" in action_data.keys():
+            if 1 == action_data["selfTargeting"]:
+                points += 10 if 0 == action_data["remove"] else -10
+            else:
+                points -= 10
+        else:
+            points -= 10
     elif "blockade" == actionType:
-        if 4 <= action_data["blocks"]:
+        if 3 <= action_data["blocks"] < 1:
             return False
         points -= action_data["blocks"] * 10
-    else:
-        points -= 1
     return points
 
 
 def balance_ability(multiplier, cooldown, max_damage, action_data):
     if type(action_data) is list:
+        if 1 < list(map(lambda x: x["actionType"], action_data)).count("blockade"):
+            return False
         if cooldown > action_data[0]["cooldown"]:
             return False
         elif (damage_actions := list(filter(lambda x: x["actionType"] in damage_dealing, action_data))) \
@@ -193,6 +201,8 @@ def balance_ability(multiplier, cooldown, max_damage, action_data):
 
 def balance_attack(multiplier, max_damage, action_data):
     if type(action_data) is list:
+        if 1 < list(map(lambda x: x["actionType"], action_data)).count("blockade"):
+            return False
         points = multiplier * action_data[0]["cooldown"]
         if not (damage_actions := list(filter(lambda x: x["actionType"] in damage_dealing, action_data))):
             return False
@@ -224,8 +234,7 @@ def balance(action, action_data):
             return balance_attack(10, 20, action_data)
         else:
             return False
-    except KeyError as ke:
-        print(ke)
+    except KeyError:
         return False
 
 
