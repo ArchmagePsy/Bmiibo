@@ -32,10 +32,10 @@ if __name__ == "__main__":
             output = None
         for i in range(args.matches):
             print("match", i + 1)
-            g = Game(args.board_size, basic_one=(0, 0), basic_two=(args.board_size-1, args.board_size-1))
-            winner = g.play(reporting=args.reporting, file=output)
+            game = Game(args.board_size, basic_one=(0, 0), basic_two=(args.board_size - 1, args.board_size - 1))
+            winner = game.play(reporting=args.reporting, file=output)
             wins[winner.name] += 1
-            for player in g.players + g.dead:
+            for player in game.players + game.dead:
                 player.brain.save()
         if output:
             output.close()
@@ -49,9 +49,9 @@ if __name__ == "__main__":
         with open("training.json", "r") as training_file:
             training = json.load(training_file)
         for i in range(100):
-            g = Game(args.board_size, **{name: pos for name, pos in zip(training, choose_positions(len(training), args.board_size))})
-            g.play(reporting=args.reporting, file=output)
-            for player in g.players + g.dead:
+            game = Game(args.board_size, **{name: pos for name, pos in zip(training, choose_positions(len(training), args.board_size))})
+            game.play(reporting=args.reporting, file=output)
+            for player in game.players + game.dead:
                 player.brain.save()
         if output:
             output.close()
@@ -61,9 +61,9 @@ if __name__ == "__main__":
         else:
             output = None
         for i in range(args.matches):
-            g = Game(args.board_size, **{name: pos for name, pos in zip(args.names, choose_positions(len(args.names), args.board_size))})
-            g.play(reporting=args.reporting, file=output)
-            for player in g.players + g.dead:
+            game = Game(args.board_size, **{name: pos for name, pos in zip(args.names, choose_positions(len(args.names), args.board_size))})
+            game.play(reporting=args.reporting, file=output)
+            for player in game.players + game.dead:
                 player.brain.save()
         if output:
             output.close()
