@@ -15,7 +15,6 @@ from chess import Game, choose_positions
 
 load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
-GUILD = os.getenv("DISCORD_GUILD")
 DAD = int(os.getenv("DAD"))
 DIR = os.getenv("BMIIBO_DIR")
 
@@ -189,11 +188,7 @@ def is_dm(channel):
 
 @client.event
 async def on_ready():
-    guild = discord.utils.get(client.guilds, name=GUILD)
-    print(
-        f"{client.user} is connected to the following guild:\n"
-        f"{guild.name}(id: {guild.id})"
-    )
+    print(f"I'm all ready to go! wish me luck!")
 
 
 @client.event
