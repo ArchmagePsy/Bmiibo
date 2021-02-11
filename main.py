@@ -67,4 +67,3 @@ if __name__ == "__main__":
                 player.brain.save()
         if output:
             output.close()
-

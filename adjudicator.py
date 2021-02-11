@@ -304,6 +304,10 @@ async def on_message(message):
             
             Thanks, Judy"""
         elif "how" in pro_message:
+            if "play" in pro_message:
+                with open("bmiibo_rules.pdf", "rb") as rules_file:
+                    await message.channel.send(f"I'm glad you asked {message.author.name}! here are the rules", file=discord.File(rules_file, "rules.pdf"))
+                return
             response = """
             All my commands are prefixed with `'!judy'`
             
