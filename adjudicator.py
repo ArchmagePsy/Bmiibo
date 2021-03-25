@@ -322,7 +322,17 @@ async def on_message(message):
                 with open("bmiibo_rules.pdf", "rb") as rules_file:
                     await message.channel.send(f"I'm glad you asked {message.author.name}! here are the rules", file=discord.File(rules_file, "rules.pdf"))
                 return
-            response = """
+            elif "are you" in pro_message or "do you do" in pro_message:
+                response = random.choice([
+                    "I'm doing wonderful, thank you for asking, how about you?",
+                    "Working hard for my friends!",
+                    "I'm okay . . . Robophobia is on the rise-but I'm doing my best to stay positive for you guys!",
+                    "It's a great day today so I'm just chipping away at my work, chuggin' along as my old man says.",
+                    "Why thank you very much, I'm doing splendid.",
+                    "Great! Your care and concern is what keeps me going!"
+                ])
+            else:
+                response = """
             All my commands are prefixed with `'!judy'`
             
             `claim name`
@@ -367,8 +377,14 @@ async def on_message(message):
             get a description of what judy is built for
             
             `how`
-            this message
+            this message. add `play` for Bmiibo Buto Chess rules or add `are you` or `do you do` to ask judy how he's 
+            doing
+            
+            `hi`
+            greeting
             """
+        elif "hi" in pro_message or "hello" in pro_message:
+            response = f"Hello {message.author.name}!" if message.author.id != DAD else "Hello Dad!"
         else:
             response = "How can I help?"
         if 2000 >= len(response):
