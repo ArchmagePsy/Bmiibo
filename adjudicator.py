@@ -67,14 +67,13 @@ def claim(user_id, name, template=None):
         return 2
     elif name in claimed.values():
         return 0
-    elif template and any(map(lambda a: not os.path.exists(f"{TEMPLATES}{template}_{a}.json"), ["attack", "ability", "ultimate"])):
+    elif template and (any(map(lambda a: not os.path.exists(f"{TEMPLATES}{template}_{a}.json"), ["attack", "ability", "ultimate"])) and "wild" != template):
         return 3
     else:
         claimed[user_id] = name
         with open("claims", "wb") as claims_file:
             pickle.dump(claimed, claims_file)
         if template:
-
             if "wild" == template:
                 for action_name in ["attack", "ability", "ultimate"]:
                     shutil.copyfile(random.choice(glob.glob(f"{TEMPLATES}*_{action_name}.json")), f"{DIR}{name}_{action_name}.json")
