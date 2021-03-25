@@ -6,3 +6,4 @@ bmiibos/*.json
 bmiibos/*_brain
 claims
 training.json
+*.bat
