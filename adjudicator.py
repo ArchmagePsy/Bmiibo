@@ -325,7 +325,10 @@ async def on_message(message):
             
             `claim name`
             where `name` is the name you want to claim for your bmiibo, can only be done once and must be done before
-            most other commands. name can be any alphanumeric string between 2 and 20 characters long
+            most other commands. name can be any alphanumeric string between 2 and 20 characters long. If you'd like you 
+            can use a fully functional template to start your bmiibo off by adding `:templatename` to the command e.g
+            `claim bob:melee` currently the templates are: melee, ranged, mixed and wild which selects a random
+            combination of attack and ability and ultimate from the other three (may not be as good)
             
             `train`
             add your bmiibo to the training list or if it is already in the training list remove it
