@@ -1,9 +1,11 @@
+import glob
 import io
 import json
 import os
 import pickle
 import random
 import re
+import shutil
 from tempfile import TemporaryFile
 from datetime import datetime
 
@@ -17,6 +19,7 @@ load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
 DAD = int(os.getenv("DAD"))
 DIR = os.getenv("BMIIBO_DIR")
+TEMPLATES = os.getenv("TEMPLATES_DIR")
 
 welcome = [
     "You're welcome",
@@ -29,7 +32,7 @@ welcome = [
 ]
 
 compliment = [
-    "Don't tell the others but you're my faveourite!",
+    "Don't tell the others but you're my favourite!",
     "Damn, you are absolutely *killing* it today!",
     "Did you do your hair different this morning? It looks great!",
     "I can already tell that you've got today in the bag.",
@@ -40,7 +43,7 @@ compliment = [
 
 client = discord.Client()
 prefix = "!"
-claim_regex = re.compile(r"claim\s+(\w{2,20})")
+claim_regex = re.compile(r"claim\s+(\w{2,20})(:(\w{2,20}))?")
 edit_regex = re.compile(r"edit\s+(attack|ability|ultimate)(\[\d+])?:(\w{1,20})=(number|string):(\w{1,20})")
 save_regex = re.compile(r"save\s+(attack|ability|ultimate|all)")
 reset_regex = re.compile(r"reset\s+(attack|ability|ultimate|all)")
@@ -59,15 +62,25 @@ else:
     training = []
 
 
-def claim(user_id, name):
+def claim(user_id, name, template=None):
     if user_id in claimed.keys():
         return 2
     elif name in claimed.values():
         return 0
+    elif template and any(map(lambda a: not os.path.exists(f"{TEMPLATES}{template}_{a}"), ["attack", "ability", "ultimate"])):
+        return 3
     else:
         claimed[user_id] = name
         with open("claims", "wb") as claims_file:
             pickle.dump(claimed, claims_file)
+        if template:
+
+            if "wild" == template:
+                for action_name in ["attack", "ability", "ultimate"]:
+                    shutil.copyfile(random.choice(glob.glob(f"{TEMPLATES}*_{action_name}")), f"{DIR}{name}_{action_name}.json")
+            else:
+                for action_name in ["attack", "ability", "ultimate"]:
+                    shutil.copyfile(f"{TEMPLATES}{template}_{action_name}", f"{DIR}{name}_{action_name}.json")
         return 1
 
 
@@ -202,12 +215,14 @@ async def on_message(message):
         if "claim" in strip_message:
             matches = claim_regex.search(strip_message)
             if matches:
-                if 1 == (claim_result := claim(message.author.id, matches[1])):
+                if 1 == (claim_result := claim(message.author.id, matches[1], template=matches[3])):
                     await message.channel.send(f"claimed `{matches[1]}` for {message.author.name}")
                 elif 0 == claim_result:
                     await message.channel.send(f"sorry {message.author.name}! `{matches[1]}` has already been claimed :(")
                 elif 2 == claim_result:
                     await message.channel.send(f"sorry {message.author.name}! you've already claimed a name")
+                elif 3 == claim_result:
+                    await message.channel.send(f"sorry {message.author.name}! `{matches[3]}` is not a valid template")
             else:
                 await message.channel.send(f"sorry {message.author.name}! I'm not sure that's a valid name")
         elif "edit" in strip_message:

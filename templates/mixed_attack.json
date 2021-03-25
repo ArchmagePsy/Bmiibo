@@ -1,0 +1,13 @@
+[
+  {
+    "actionType": "ranged",
+    "cooldown": 2,
+    "element": "dark",
+    "amount": 5
+  },
+  {
+    "actionType": "melee",
+    "element": "light",
+    "amount": 10
+  }
+]

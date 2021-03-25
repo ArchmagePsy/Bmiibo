@@ -1,0 +1,28 @@
+[
+  {
+    "actionType": "weakness",
+    "cooldown": 4,
+    "element": "light",
+    "remove": 0,
+    "selfTargeting": 1
+  },
+  {
+    "actionType": "weakness",
+    "element": "dark",
+    "remove": 0,
+    "selfTargeting": 1
+  },
+  {
+    "actionType": "explosion",
+    "element": "light",
+    "amount": 10,
+    "force": 2,
+    "radius": 2
+  },
+  {
+    "actionType": "whirl",
+    "element": "dark",
+    "amount": 5,
+    "force": 1
+  }
+]

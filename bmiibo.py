@@ -147,17 +147,14 @@ def balance_action(points, action_data):
     if actionType not in actionTypes.keys():
         return False
     elif actionType in damage_dealing:
-        if actionType in multi_hit:
-            points -= action_data["amount"] * 2
-        else:
-            if actionType in force_actions:
-                points -= action_data["force"] * 3
-            elif "charge" == actionType:
-                if 5 > action_data["recoil"]:
-                    return False
-                points += action_data["recoil"]
-                points -= action_data["distance"] * 3
-            points -= action_data["amount"] if actionType in melee_actions else action_data["amount"] * 2
+        if actionType in force_actions:
+            points -= action_data["force"] * 3
+        elif "charge" == actionType:
+            if 5 > action_data["recoil"]:
+                return False
+            points += action_data["recoil"]
+            points -= action_data["distance"] * 3
+        points -= action_data["amount"] if actionType in melee_actions and actionType not in multi_hit else action_data["amount"] * 2
     elif "heal" == actionType:
         points -= round(action_data["amount"] * 1.5)
     elif "weakness" == actionType:

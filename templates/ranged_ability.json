@@ -1,0 +1,25 @@
+[
+  {
+    "actionType": "weakness",
+    "cooldown": 6,
+    "element": "dark",
+    "remove": 0
+  },
+  {
+    "actionType": "weakness",
+    "element": "light",
+    "remove": 0,
+    "selfTargeting": 1
+  },
+  {
+    "actionType": "blockade",
+    "blocks": 1
+  },
+  {
+    "actionType": "explosion",
+    "element": "dark",
+    "amount": 10,
+    "force": 0,
+    "radius": 2
+  }
+]

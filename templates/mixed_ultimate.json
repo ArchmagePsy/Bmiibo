@@ -1,0 +1,27 @@
+[
+  {
+    "actionType": "weakness",
+    "cooldown": 10,
+    "element": "light",
+    "remove": 1,
+    "selfTargeting": 1
+  },
+  {
+    "actionType": "weakness",
+    "element": "dark",
+    "remove": 1,
+    "selfTargeting": 1
+  },
+  {
+    "actionType": "charge",
+    "element": "dark",
+    "amount": 10,
+    "distance": 10,
+    "recoil": 10
+  },
+  {
+    "actionType": "piercing",
+    "element": "light",
+    "amount": 20
+  }
+]

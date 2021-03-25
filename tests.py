@@ -1,3 +1,5 @@
+import glob
+import json
 import unittest
 
 from bmiibo import Bmiibo, Brain, normalize_strings, Action, ActionGroup, generate_actions, is_adjacent, balance
@@ -324,6 +326,13 @@ class ActionTestCase(unittest.TestCase):
         self.player.ultimate.tick()
         self.board.move(self.player.pos, (4, 5))
         self.assertEqual(len(list(generate_actions(self.board.simplified(self.player), self.player))), 73)
+
+    def test_templates(self):
+        for action in ["attack", "ability", "ultimate"]:
+            for action_path in glob.glob(f"templates/*_{action}.json"):
+                with open(action_path, "r") as action_file:
+                    action_data = json.load(action_file)
+                    self.assertTrue(balance(action, action_data))
 
 
 if __name__ == '__main__':

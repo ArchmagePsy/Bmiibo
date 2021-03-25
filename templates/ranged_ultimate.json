@@ -1,0 +1,18 @@
+[
+  {
+    "actionType": "piercing",
+    "cooldown": 10,
+    "element": "dark",
+    "amount": 35
+  },
+  {
+    "actionType": "blockade",
+    "blocks": 2
+  },
+  {
+    "actionType": "weakness",
+    "element": "light",
+    "remove": 1,
+    "selfTargeting": 1
+  }
+]

@@ -1,0 +1,22 @@
+[
+  {
+    "actionType": "charge",
+    "cooldown": 10,
+    "element": "light",
+    "distance": 6,
+    "recoil": 10,
+    "amount": 15
+  },
+  {
+    "actionType": "whirl",
+    "element": "light",
+    "amount": 20,
+    "force": 4
+  },
+  {
+    "actionType": "weakness",
+    "element": "dark",
+    "remove": 1,
+    "selfTargeting": 1
+  }
+]

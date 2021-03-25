@@ -1,0 +1,19 @@
+[
+  {
+    "actionType": "weakness",
+    "cooldown": 4,
+    "element": "light",
+    "remove": 0
+  },
+  {
+    "actionType": "weakness",
+    "element": "dark",
+    "remove": 0,
+    "selfTargeting": 1
+  },
+  {
+    "actionType": "heal",
+    "selfTargeting": 1,
+    "amount": 13
+  }
+]
