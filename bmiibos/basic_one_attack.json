@@ -1,1 +1,6 @@
-[{"actionType": "charge", "amount": 10, "element": "normal", "cooldown": 99, "recoil": 99, "range": 2, "distance": 10}]
+{
+  "actionType": "melee",
+  "amount": 10,
+  "element": "normal",
+  "cooldown": 1
+}
