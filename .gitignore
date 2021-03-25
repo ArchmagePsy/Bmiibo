@@ -2,6 +2,7 @@ venv
 __pycache__
 .idea
 .env
+bmiibos/*.json
 bmiibos/*_brain
 claims
 training.json
