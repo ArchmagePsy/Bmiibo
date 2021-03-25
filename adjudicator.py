@@ -204,6 +204,8 @@ def is_dm(channel):
 @client.event
 async def on_ready():
     print(f"I'm all ready to go! wish me luck!")
+    for guild in client.guilds:
+        await discord.utils.get(guild.text_channels, name="general").send("Hi @everyone I'm back!")
 
 
 @client.event
